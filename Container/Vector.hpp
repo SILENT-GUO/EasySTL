@@ -1,6 +1,8 @@
 #ifndef VECTOR_HPP
 #define VECTOR_HPP
 #include <iostream>
+#include <type_traits>
+
 
 // implement a Vector class (not thread-safe)
 template <typename T>
@@ -40,9 +42,24 @@ public:
             return;
         }
         if (newSize < numElements) {
-            for (size_t i = newSize; i < numElements; i++) {
-                dataPointer[i].~T();
+            if constexpr(!std::is_trivially_destructible_v<T>) { // manual destruction
+                for (size_t i = newSize; i < numElements; i++) {
+                    dataPointer[i].~T();
+                }
             }
+            numElements = newSize;
+        }
+        else {
+            while (numAllocatedSpace < newSize) {
+                grow();
+            }
+            if constexpr(!std::is_trivially_destructible_v<T>) {
+                for (size_t i = numElements; i < newSize; i++) {
+                    dataPointer[i].T();
+                }
+            }
+            // else primitive types are by default initialized.
+
             numElements = newSize;
         }
     }
@@ -65,6 +82,7 @@ public:
     [[nodiscard]] size_t size() const {
       return numElements;
     }
+
     [[nodiscard]] size_t capacity() const {
       return numAllocatedSpace;
     }
@@ -96,6 +114,30 @@ public:
             throw std::out_of_range("Vector is empty");
         }
         numElements --;
+    }
+
+    bool equals(Vector<T>& other) const {
+        if (numElements != other.numElements) {
+            return false;
+        }
+        for(size_t i = 0; i < numElements; i++) {
+            if (dataPointer[i] != other.dataPointer[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool equals(Vector<const T>& other) const {
+        if (numElements != other.numElements) {
+            return false;
+        }
+        for(size_t i = 0; i < numElements; i++) {
+            if (dataPointer[i] != other.dataPointer[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     T& operator[](size_t index){

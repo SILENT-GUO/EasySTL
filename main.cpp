@@ -3,7 +3,8 @@
 #include "sort.hpp"
 #include "String.hpp"
 
-#include "Headers/1-unique_characters.hpp"
+#include "Headers/isCharacterUnique.hpp"
+#include "Headers/areSimilarStrings.hpp"
 
 void run_sort_tests();
 void run_vector_tests();
@@ -54,7 +55,15 @@ void run_vector_tests() {
 
 void run_chap1_tests() {
     String s1("hello world");
+    std::cout << "test s1 substring:" << s1.substr(2).data() << std::endl;
+    std::cout << "test s1 find at index: " << s1.find("ll") << std::endl;
     std::cout << "Problem 1: " << std::endl;
     std::cout << "--------" << std::endl;
     std::cout << "Input: " << s1.data() << " - " << "Output: " << isCharacterUnique::isCharacterUnique_1_1(s1) << std::endl;
+
+    std::cout << "--------" << std::endl;
+    String s2("helol wrdol");
+    std::cout << "Problem 2: " << std::endl;
+    std::cout << "--------" << std::endl;
+    std::cout << "Input1 After sorting: " << s1.data() << " - " << "Input2: " << s2.data() << " - " << "Output: " << areSimilarStrings::areSimilarStrings1_2(s1, s2) << std::endl;
 }

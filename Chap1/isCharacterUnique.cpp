@@ -1,6 +1,6 @@
 // 实现算法，确定一个字符串的所有字符都不相同，不允许使用额外数据结构
 #include "sort.hpp"
-#include "1-unique_characters.hpp"
+#include "isCharacterUnique.hpp""
 
 
 bool isCharacterUnique::isCharacterUnique_1_1(String &s) {

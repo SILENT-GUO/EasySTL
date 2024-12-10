@@ -3,7 +3,9 @@ project(CC189)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(CC189 main.cpp Chap1/1-unique_characters.cpp
+add_executable(CC189 main.cpp Chap1/isCharacterUnique.cpp
+        Chap1/areSimilarStrings.cpp
+        Headers/areSimilarStrings.hpp
 )
 
 target_include_directories(CC189 PRIVATE
