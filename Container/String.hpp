@@ -4,69 +4,114 @@
 
 #ifndef STRING_HPP
 #define STRING_HPP
+
 #include <cstring>
+#include <concepts>
 #include "Vector.hpp"
-// We define the string to be the child of Vector class.
 
-class String: public Vector<char> {
+// Define the arithmetic concept
+template <typename T>
+concept arithmetic = std::is_arithmetic_v<T>;
+
+// String class inheriting from Vector<char>
+class String : public Vector<char> {
 private:
-    static const size_t HASH_BASE_B = 16;
-    static const size_t HASH_MODULO_P = 31;
-public:
-    static const int npos = -1;
+    static constexpr size_t HASH_BASE_B = 31; // Updated to match typical Robin-Karp implementation
+    static constexpr size_t HASH_MODULO_P = 1000000007; // Use an integer for modulo
 
-    String() = default;
-    explicit String(const char* cstr) {
-        const size_t len = strlen(cstr);
-        this->reserve(len+1);
-        // Warning!!! This operation is not recommended! If the resize operation is forgotten, the size variable is wrong!
-        memcpy(this->data(), cstr, len+1);
-        this->resize(len);
+public:
+    static constexpr int npos = -1;
+
+    // Default Constructor
+    String() = default; // Inherits Vector<char>() constructor
+
+    // Constructor from C-string
+    explicit String(const char* cstr) : Vector<char>() {
+        if (cstr == nullptr) {
+            // Handle null pointer input gracefully
+            this->numElements = 0;
+            this->reserve(1);
+            (*this)[0] = '\0'; // Ensure it's a valid empty string
+            return;
+        }
+
+        const size_t len = std::strlen(cstr); // Length of the input string (does not include null terminator)
+        this->reserve(len + 1); // Reserve space for characters + null terminator
+        std::copy(cstr, cstr + len, this->begin()); // Copy characters
+        this->numElements = len; // Set the size of the string
+        (*this)[len] = '\0'; // Ensure null termination
     }
+
+
+    // Constructor with size and initial value
+    String(const size_t size, const char initialValue) : Vector<char>(size+1, size, initialValue) {
+        // Ensure null termination if needed
+        if (size > 0) {
+            (*this)[size] = '\0';
+        }
+    }
+
+    // Copy Constructor
+    String(const String& other) : Vector<char>(other) {}
+
+    // Move Constructor
+    String(String&& other) noexcept : Vector<char>(std::move(other)) {}
+
+    // Copy Assignment Operator
+    String& operator=(const String& other) {
+        Vector<char>::operator=(other);
+        return *this;
+    }
+
+    // Move Assignment Operator
+    String& operator=(String&& other) noexcept {
+        Vector<char>::operator=(std::move(other));
+        return *this;
+    }
+
+    // Destructor
+    ~String() = default; // Inherits Vector<char>'s destructor
+
+    // Overloaded Output Operator
     friend std::ostream& operator<<(std::ostream& os, const String& str) {
         for (size_t i = 0; i < str.size(); i++) {
             os << str[i];
         }
         return os;
     }
-    [[nodiscard]] String substr(size_t start, size_t end = String::npos) const {
+
+    // Substring Method
+    [[nodiscard]] String substr(size_t start, int end = String::npos) const {
         if (start >= this->size()) {
             throw std::out_of_range("String::substr start position out of range!");
         }
         if (end == String::npos || end > this->size()) {
-            // in this case we take all chars from and after
             end = this->size();
         }
 
         const size_t len = end - start;
         String result;
-        result.reserve(len);
-        memcpy(result.data(), this->data() + start, len);
-        std::cout << this->data() << std::endl;
-        result.data()[len] = '\0'; // Null-terminate the result
-        result.resize(len);   // Update the size of the result
+        result.reserve(len + 1); // +1 for null terminator
+        std::copy_n(this->data() + start, len, result.begin());
+        result.numElements = len;
+        result[len] = '\0';
         return result;
     }
 
-    // This function should only return the first occurrence of the pattern.
-    // All occurrence should be found with the combination of find and substr
-    // This function uses Robin-Karp Algorithm.
-    [[nodiscard]] size_t find(const char* patternChar, size_t start = 0) const {
-        String pattern(patternChar);
+    // Robin-Karp Algorithm for Find
+    [[nodiscard]] int find(const char* patternChar, size_t start = 0) const {
+        String pattern(patternChar); // Wrap the pattern as a String for consistency
         if (pattern.empty()) {
-            return start; // Empty pattern matches at the start position
+            return npos;
         }
 
         size_t textLength = this->size();
         size_t patternLength = pattern.size();
 
-        if (start > textLength || textLength - start < patternLength) {
-            throw std::out_of_range("String::find start position out of range!");
+        if (start >= textLength || textLength - start < patternLength) {
+            // Start position is out of range or remaining text is shorter than pattern
+            return String::npos;
         }
-
-        // Constants for hash computation
-        constexpr size_t HASH_BASE_B = 31;
-        constexpr size_t HASH_MODULO_P = 1e9 + 7;
 
         // Compute the hash for the pattern
         size_t hashPattern = 0;
@@ -104,13 +149,9 @@ public:
 
             // Update the hash for the next window
             if (i < textLength - patternLength) {
-                hashText = (hashText - (*this)[i] * highestPower) % HASH_MODULO_P;
+                // Rolling hash: remove the leading character and add the trailing character
+                hashText = (hashText + HASH_MODULO_P - ((*this)[i] * highestPower) % HASH_MODULO_P) % HASH_MODULO_P;
                 hashText = (hashText * HASH_BASE_B + (*this)[i + patternLength]) % HASH_MODULO_P;
-
-                // Handle negative hash values
-                if (hashText < 0) {
-                    hashText += HASH_MODULO_P;
-                }
             }
         }
 
@@ -118,6 +159,76 @@ public:
         return String::npos;
     }
 
+    // c_str Method ensuring null termination
+    [[nodiscard]] const char* c_str() const {
+        // Ensure there's a null terminator
+        if (this->size() == this->capacity()) {
+            const_cast<String*>(this)->reserve(this->size() + 1);
+        }
+        (*const_cast<String*>(this))[this->size()] = '\0';
+        return this->begin();
+    }
+
+    // Overloaded Addition Operator
+    String operator+(const String& other) const {
+        String result;
+        const size_t newLength = this->size() + other.size();
+        result.reserve(newLength + 1); // +1 for null terminator
+
+        std::ranges::copy(*this, result.begin());
+        std::ranges::copy(other, result.begin() + this->size());
+
+        result.numElements = newLength;
+        result[newLength] = '\0';
+        return result;
+    }
+
+    // Overloaded Addition Assignment Operator (String)
+    void operator+=(const String& other) {
+        size_t originalSize = this->size();
+        size_t newSize = originalSize + other.size();
+
+        // Ensure sufficient capacity
+        this->reserve(newSize + 1); // +1 for null terminator
+
+        // Resize to include the new data
+        this->numElements = newSize;
+
+        // Copy the data from the other string
+        std::copy(other.begin(), other.end(), this->begin() + originalSize);
+
+        // Ensure null termination
+        (*this)[newSize] = '\0';
+    }
+
+    // Overloaded Addition Assignment Operator (C-string)
+    void operator+=(const char* other) {
+        if (other == nullptr) return;
+
+        size_t otherLength = std::strlen(other);
+        size_t originalSize = this->size();
+        size_t newSize = originalSize + otherLength;
+
+        // Ensure sufficient capacity
+        this->reserve(newSize + 1); // +1 for null terminator
+
+        // Resize to include the new data
+        this->numElements = newSize;
+
+        // Copy the data from the C-string
+        std::copy(other, other + otherLength, this->begin() + originalSize);
+
+        // Ensure null termination
+        (*this)[newSize] = '\0';
+    }
+
+    // Static Method to Convert Arithmetic Types to String
+    template <typename T>
+    requires arithmetic<T>
+    static String to_String(T value) {
+        const std::string stringStr = std::to_string(value);
+        return String(stringStr.c_str());
+    }
 };
 
-#endif //STRING_HPP
+#endif // STRING_HPP

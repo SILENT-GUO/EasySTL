@@ -70,12 +70,33 @@ build CMakeFiles/CC189.dir/Chap1/areSimilarStrings.cpp.o: CXX_COMPILER__CC189_un
   OBJECT_DIR = CMakeFiles/CC189.dir
   OBJECT_FILE_DIR = CMakeFiles/CC189.dir/Chap1
 
-build CMakeFiles/CC189.dir/subStringReplace.cpp.o: CXX_COMPILER__CC189_unscanned_Debug /Users/zbguo/Documents/Self-Learning/CC-189/subStringReplace.cpp || cmake_object_order_depends_target_CC189
-  DEP_FILE = CMakeFiles/CC189.dir/subStringReplace.cpp.o.d
+build CMakeFiles/CC189.dir/Chap1/subStringReplacement.cpp.o: CXX_COMPILER__CC189_unscanned_Debug /Users/zbguo/Documents/Self-Learning/CC-189/Chap1/subStringReplacement.cpp || cmake_object_order_depends_target_CC189
+  DEP_FILE = CMakeFiles/CC189.dir/Chap1/subStringReplacement.cpp.o.d
   FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk -fcolor-diagnostics
   INCLUDES = -I/Users/zbguo/Documents/Self-Learning/CC-189/Container -I/Users/zbguo/Documents/Self-Learning/CC-189/Utils -I/Users/zbguo/Documents/Self-Learning/CC-189/Headers
   OBJECT_DIR = CMakeFiles/CC189.dir
-  OBJECT_FILE_DIR = CMakeFiles/CC189.dir
+  OBJECT_FILE_DIR = CMakeFiles/CC189.dir/Chap1
+
+build CMakeFiles/CC189.dir/Chap1/editDistance.cpp.o: CXX_COMPILER__CC189_unscanned_Debug /Users/zbguo/Documents/Self-Learning/CC-189/Chap1/editDistance.cpp || cmake_object_order_depends_target_CC189
+  DEP_FILE = CMakeFiles/CC189.dir/Chap1/editDistance.cpp.o.d
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk -fcolor-diagnostics
+  INCLUDES = -I/Users/zbguo/Documents/Self-Learning/CC-189/Container -I/Users/zbguo/Documents/Self-Learning/CC-189/Utils -I/Users/zbguo/Documents/Self-Learning/CC-189/Headers
+  OBJECT_DIR = CMakeFiles/CC189.dir
+  OBJECT_FILE_DIR = CMakeFiles/CC189.dir/Chap1
+
+build CMakeFiles/CC189.dir/Chap1/stringCompression.cpp.o: CXX_COMPILER__CC189_unscanned_Debug /Users/zbguo/Documents/Self-Learning/CC-189/Chap1/stringCompression.cpp || cmake_object_order_depends_target_CC189
+  DEP_FILE = CMakeFiles/CC189.dir/Chap1/stringCompression.cpp.o.d
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk -fcolor-diagnostics
+  INCLUDES = -I/Users/zbguo/Documents/Self-Learning/CC-189/Container -I/Users/zbguo/Documents/Self-Learning/CC-189/Utils -I/Users/zbguo/Documents/Self-Learning/CC-189/Headers
+  OBJECT_DIR = CMakeFiles/CC189.dir
+  OBJECT_FILE_DIR = CMakeFiles/CC189.dir/Chap1
+
+build CMakeFiles/CC189.dir/Chap1/MatrixRotation.cpp.o: CXX_COMPILER__CC189_unscanned_Debug /Users/zbguo/Documents/Self-Learning/CC-189/Chap1/MatrixRotation.cpp || cmake_object_order_depends_target_CC189
+  DEP_FILE = CMakeFiles/CC189.dir/Chap1/MatrixRotation.cpp.o.d
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk -fcolor-diagnostics
+  INCLUDES = -I/Users/zbguo/Documents/Self-Learning/CC-189/Container -I/Users/zbguo/Documents/Self-Learning/CC-189/Utils -I/Users/zbguo/Documents/Self-Learning/CC-189/Headers
+  OBJECT_DIR = CMakeFiles/CC189.dir
+  OBJECT_FILE_DIR = CMakeFiles/CC189.dir/Chap1
 
 
 # =============================================================================
@@ -85,7 +106,7 @@ build CMakeFiles/CC189.dir/subStringReplace.cpp.o: CXX_COMPILER__CC189_unscanned
 #############################################
 # Link the executable CC189
 
-build CC189: CXX_EXECUTABLE_LINKER__CC189_Debug CMakeFiles/CC189.dir/main.cpp.o CMakeFiles/CC189.dir/Chap1/isCharacterUnique.cpp.o CMakeFiles/CC189.dir/Chap1/areSimilarStrings.cpp.o CMakeFiles/CC189.dir/subStringReplace.cpp.o
+build CC189: CXX_EXECUTABLE_LINKER__CC189_Debug CMakeFiles/CC189.dir/main.cpp.o CMakeFiles/CC189.dir/Chap1/isCharacterUnique.cpp.o CMakeFiles/CC189.dir/Chap1/areSimilarStrings.cpp.o CMakeFiles/CC189.dir/Chap1/subStringReplacement.cpp.o CMakeFiles/CC189.dir/Chap1/editDistance.cpp.o CMakeFiles/CC189.dir/Chap1/stringCompression.cpp.o CMakeFiles/CC189.dir/Chap1/MatrixRotation.cpp.o
   FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk
   OBJECT_DIR = CMakeFiles/CC189.dir
   POST_BUILD = :

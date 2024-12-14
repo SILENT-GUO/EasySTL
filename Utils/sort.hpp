@@ -1,5 +1,5 @@
-#ifndef SORT_H
-#define SORT_H
+#ifndef SORT_HPP
+#define SORT_HPP
 
 #include "../Container/Vector.hpp"
 #include <concepts>
