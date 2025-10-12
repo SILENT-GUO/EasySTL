@@ -1,252 +1,324 @@
 #ifndef VECTOR_HPP
 #define VECTOR_HPP
+
 #include <iostream>
-#include <vector>
-#include <algorithm>
 #include <type_traits>
 #include <initializer_list>
+#include <stdexcept>
+#include <utility>
 
 template <typename T>
 class Vector {
-protected: // Changed to protected for derived class access
-    T* dataPointer;
-    size_t numElements; // current number of elements in array
-    size_t numAllocatedSpace; // Total allocated numAllocatedSpace
+protected:
+    T* data_;              // pointer to underlying array
+    size_t size_;           // current number of elements
+    size_t capacity_;       // total allocated capacity
 
-    void grow(){
-        size_t newCapacity = numAllocatedSpace * 2;
-        T* newDataPointer = new T[newCapacity];
-        for(size_t i = 0; i < numElements; i++){
-            newDataPointer[i] = dataPointer[i];
+    void grow() {
+        size_t new_capacity = capacity_ * 2;
+        T* new_data = new T[new_capacity];
+
+        // Copy existing elements
+        for (size_t i = 0; i < size_; ++i) {
+            new_data[i] = std::move_if_noexcept(data_[i]);
         }
-        numAllocatedSpace = newCapacity;
-        delete [] dataPointer;
-        dataPointer = newDataPointer;
+
+        delete[] data_;
+        data_ = new_data;
+        capacity_ = new_capacity;
     }
 
 public:
-    // Default Constructor
-    Vector(): numElements(0), numAllocatedSpace(1){
-        dataPointer = new T[numAllocatedSpace];
-    }
+    // --- Constructors ---
 
-    // Constructor with initial capacity
-    explicit Vector(const size_t initialCapacity): numElements(0), numAllocatedSpace(initialCapacity){
-        dataPointer = new T[numAllocatedSpace];
-    }
+    Vector() : data_(new T[1]), size_(0), capacity_(1) {}
 
-    // Constructor with initial size and value
-    Vector(const size_t initialSize, const T initialValue): numElements(initialSize), numAllocatedSpace(initialSize){
-        dataPointer = new T[numAllocatedSpace];
-        for(size_t i = 0; i < numElements; i++) {
-            dataPointer[i] = initialValue;
+    explicit Vector(size_t initial_capacity)
+        : data_(new T[initial_capacity]), size_(0), capacity_(initial_capacity) {}
+
+    Vector(size_t initial_size, const T& value)
+        : data_(new T[initial_size]), size_(initial_size), capacity_(initial_size) {
+        for (size_t i = 0; i < size_; ++i) {
+            data_[i] = value;
         }
     }
 
-    // Constructor with initial size and value
-    Vector(const size_t initialAllocatedSpace, const size_t initialNumElements,  const T initialValue): numElements(initialNumElements), numAllocatedSpace(initialAllocatedSpace){
-        dataPointer = new T[numAllocatedSpace];
-        for(size_t i = 0; i < numElements; i++) {
-            dataPointer[i] = initialValue;
-        }
+    Vector(std::initializer_list<T> list)
+        : data_(new T[list.size()]), size_(list.size()), capacity_(list.size()) {
+        std::copy(list.begin(), list.end(), data_);
     }
 
-    // Initializer List Constructor
-    Vector(std::initializer_list<T> list): numElements(list.size()), numAllocatedSpace(list.size()){
-        dataPointer = new T[numAllocatedSpace];
-        std::copy(list.begin(), list.end(), dataPointer);
-    }
-
-    // Copy Constructor (Deep Copy)
-    Vector(const Vector& other): numElements(other.numElements), numAllocatedSpace(other.numAllocatedSpace){
-        dataPointer = new T[numAllocatedSpace];
-        for(size_t i = 0; i < numElements; i++) {
-            dataPointer[i] = other.dataPointer[i];
+    // Copy Constructor
+    Vector(const Vector& other)
+        : data_(new T[other.capacity_]), size_(other.size_), capacity_(other.capacity_) {
+        for (size_t i = 0; i < size_; ++i) {
+            data_[i] = other.data_[i];
         }
     }
 
     // Move Constructor
     Vector(Vector&& other) noexcept
-        : dataPointer(other.dataPointer), numElements(other.numElements), numAllocatedSpace(other.numAllocatedSpace){
-        other.dataPointer = nullptr;
-        other.numElements = 0;
-        other.numAllocatedSpace = 0;
+        : data_(other.data_), size_(other.size_), capacity_(other.capacity_) {
+        other.data_ = nullptr;
+        other.size_ = 0;
+        other.capacity_ = 0;
     }
 
-    // Copy Assignment Operator (Deep Copy)
-    Vector& operator=(const Vector& other){
+    // --- Assignment Operators ---
+
+    Vector& operator=(const Vector& other) {
         if (this == &other) return *this;
-        delete[] dataPointer;
-        numElements = other.numElements;
-        numAllocatedSpace = other.numAllocatedSpace;
-        dataPointer = new T[numAllocatedSpace];
-        for (size_t i = 0; i < numElements; i++) {
-            dataPointer[i] = other.dataPointer[i];
+
+        // Allocate new memory
+        T* new_data = new T[other.capacity_];
+        for (size_t i = 0; i < other.size_; ++i) {
+            new_data[i] = other.data_[i];
         }
+
+        delete[] data_;
+        data_ = new_data;
+        size_ = other.size_;
+        capacity_ = other.capacity_;
+
         return *this;
     }
 
-    // Move Assignment Operator
     Vector& operator=(Vector&& other) noexcept {
         if (this == &other) return *this;
-        delete[] dataPointer;
-        dataPointer = other.dataPointer;
-        numElements = other.numElements;
-        numAllocatedSpace = other.numAllocatedSpace;
-        other.dataPointer = nullptr;
-        other.numElements = 0;
-        other.numAllocatedSpace = 0;
+
+        delete[] data_;
+
+        data_ = other.data_;
+        size_ = other.size_;
+        capacity_ = other.capacity_;
+
+        other.data_ = nullptr;
+        other.size_ = 0;
+        other.capacity_ = 0;
+
         return *this;
     }
 
-    // Destructor
-    virtual ~Vector(){
-        // std::cout << "Destructor is called" << std::endl;
-        delete [] dataPointer;
-        dataPointer = nullptr;
+    // --- Destructor ---
+    virtual ~Vector() {
+        clear(); // Call destructors for non-trivial types
+        delete[] data_;
+        data_ = nullptr;
     }
 
-    // Other member functions remain unchanged
-    void resize(const size_t newSize) {
-        if (newSize == numElements) { // do nothing
-            return;
+    // --- Element Access ---
+
+    T& at(size_t index) {
+        if (index >= size_) {
+            throw std::out_of_range("Vector::at: index out of range");
         }
-        if (newSize < numElements) {
-            numElements = newSize;
+        return data_[index];
+    }
+
+    const T& at(size_t index) const {
+        if (index >= size_) {
+            throw std::out_of_range("Vector::at: index out of range");
         }
-        else {
-            while (numAllocatedSpace < newSize) {
-                grow();
+        return data_[index];
+    }
+
+    T& operator[](size_t index) {
+        // No bounds check in [], but you can enable in debug mode
+        return data_[index];
+    }
+
+    const T& operator[](size_t index) const {
+        return data_[index];
+    }
+
+    T& front() {
+        if (empty()) throw std::out_of_range("Vector is empty");
+        return data_[0];
+    }
+
+    const T& front() const {
+        if (empty()) throw std::out_of_range("Vector is empty");
+        return data_[0];
+    }
+
+    T& back() {
+        if (empty()) throw std::out_of_range("Vector is empty");
+        return data_[size_ - 1];
+    }
+
+    const T& back() const {
+        if (empty()) throw std::out_of_range("Vector is empty");
+        return data_[size_ - 1];
+    }
+
+    T* data() noexcept { return data_; }
+    const T* data() const noexcept { return data_; }
+
+    // --- Iterators ---
+    T* begin() noexcept { return data_; }
+    const T* begin() const noexcept { return data_; }
+    const T* cbegin() const noexcept { return data_; }
+
+    T* end() noexcept { return data_ + size_; }
+    const T* end() const noexcept { return data_ + size_; }
+    const T* cend() const noexcept { return data_ + size_; }
+
+    // --- Capacity ---
+    [[nodiscard]] size_t size() const noexcept { return size_; }
+    [[nodiscard]] size_t capacity() const noexcept { return capacity_; }
+    [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
+    [[nodiscard]] bool full() const noexcept { return size_ == capacity_; }
+
+    void reserve(size_t new_capacity) {
+        if (new_capacity <= capacity_) return;
+
+        T* new_data = new T[new_capacity];
+        try {
+            for (size_t i = 0; i < size_; ++i) {
+                new_data[i] = std::move_if_noexcept(data_[i]);
             }
-            if constexpr(!std::is_trivially_destructible_v<T>) {
-                for (size_t i = numElements; i < newSize; i++) {
-                    dataPointer[i] = T();
+        } catch (...) {
+            delete[] new_data;
+            throw;
+        }
+
+        delete[] data_;
+        data_ = new_data;
+        capacity_ = new_capacity;
+    }
+
+    void shrink_to_fit() {
+        if (size_ == capacity_) return;
+
+        T* new_data = new T[size_];
+        try {
+            for (size_t i = 0; i < size_; ++i) {
+                new_data[i] = std::move_if_noexcept(data_[i]);
+            }
+        } catch (...) {
+            delete[] new_data;
+            throw;
+        }
+
+        delete[] data_;
+        data_ = new_data;
+        capacity_ = size_;
+    }
+
+    // --- Modifiers ---
+    void clear() noexcept {
+        if constexpr (!std::is_trivially_destructible_v<T>) {
+            for (size_t i = 0; i < size_; ++i) {
+                data_[i].~T();
+            }
+        }
+        size_ = 0;
+    }
+
+    void resize(size_t new_size) {
+        if (new_size == size_) return;
+
+        if (new_size < size_) {
+            if constexpr (!std::is_trivially_destructible_v<T>) {
+                for (size_t i = new_size; i < size_; ++i) {
+                    data_[i].~T();
                 }
             }
-            // else primitive types are by default initialized.
-            numElements = newSize;
+            size_ = new_size;
+        } else {
+            if (new_size > capacity_) {
+                while (capacity_ < new_size) {
+                    capacity_ *= 2;
+                }
+                T* new_data = new T[capacity_];
+                try {
+                    for (size_t i = 0; i < size_; ++i) {
+                        new_data[i] = std::move_if_noexcept(data_[i]);
+                    }
+                    // Value-initialize new elements
+                    for (size_t i = size_; i < new_size; ++i) {
+                        new(&new_data[i]) T(); // placement new
+                    }
+                } catch (...) {
+                    delete[] new_data;
+                    throw;
+                }
+
+                delete[] data_;
+                data_ = new_data;
+            } else {
+                // No reallocation needed
+                for (size_t i = size_; i < new_size; ++i) {
+                    new(&data_[i]) T(); // placement new
+                }
+            }
+            size_ = new_size;
         }
     }
 
-    void reserve(const size_t newNumAllocatedSpace) {
-        if (newNumAllocatedSpace <= numAllocatedSpace) { // do nothing
-            std::cout << "Reserved space is too small!" << std::endl;
-            return;
-        }
-        T* newDataPointer = new T[newNumAllocatedSpace];
-        for(size_t i = 0; i < numElements; i++) {
-            newDataPointer[i] = dataPointer[i];
-        }
-        numAllocatedSpace = newNumAllocatedSpace;
-        delete [] dataPointer;
-        dataPointer = newDataPointer;
-    }
-
-    [[nodiscard]] size_t size() const {
-        return numElements;
-    }
-
-    [[nodiscard]] size_t capacity() const {
-        return numAllocatedSpace;
-    }
-
-    [[nodiscard]] bool empty() const {
-        return numElements == 0;
-    }
-
-    [[nodiscard]] bool full() const {
-        return numElements == numAllocatedSpace;
-    }
-
-    T* data() const {
-        return dataPointer;
-    }
-
-    void push_back(const T& element){
-        if(numElements == numAllocatedSpace){
-            //grow
+    void push_back(const T& value) {
+        if (size_ == capacity_) {
             grow();
-            // print a special message
             std::cout << "\033[1;32m[Vector Growth]\033[0m Capacity grown to "
-                      << numAllocatedSpace << " elements!\n";
+                      << capacity_ << " elements!\n";
         }
-        dataPointer[numElements++] = element;
+        data_[size_++] = value;
     }
 
-    void pop_back(){
-        if(numElements == 0){
-            throw std::out_of_range("Vector is empty");
+    void push_back(T&& value) {
+        if (size_ == capacity_) {
+            grow();
+            std::cout << "\033[1;32m[Vector Growth]\033[0m Capacity grown to "
+                      << capacity_ << " elements!\n";
         }
-        numElements --;
+        data_[size_++] = std::move(value);
     }
 
-    bool equals(Vector<T>& other) const {
-        if (numElements != other.numElements) {
-            return false;
+    template<typename... Args>
+    void emplace_back(Args&&... args) {
+        if (size_ == capacity_) {
+            grow();
+            std::cout << "\033[1;32m[Vector Growth]\033[0m Capacity grown to "
+                      << capacity_ << " elements!\n";
         }
-        for(size_t i = 0; i < numElements; i++) {
-            if (dataPointer[i] != other.dataPointer[i]) {
-                return false;
-            }
+        new(&data_[size_]) T(std::forward<Args>(args)...);
+        ++size_;
+    }
+
+    void pop_back() {
+        if (size_ == 0) {
+            throw std::out_of_range("Vector::pop_back(): empty vector");
+        }
+        --size_;
+        if constexpr (!std::is_trivially_destructible_v<T>) {
+            data_[size_].~T();
+        }
+    }
+
+    template<typename U>
+    friend bool operator==(const Vector& a, const Vector<U>& b) {
+        if (a.size() != b.size()) return false;
+        for (size_t i = 0; i < a.size(); ++i) {
+            if (a.data_[i] != b.data_[i]) return false;
         }
         return true;
     }
 
-    bool equals(Vector<const T>& other) const {
-        if (numElements != other.numElements) {
-            return false;
-        }
-        for(size_t i = 0; i < numElements; i++) {
-            if (dataPointer[i] != other.dataPointer[i]) {
-                return false;
-            }
-        }
-        return true;
+    template<typename U>
+    friend bool operator!=(const Vector& a, const Vector<U>& b) {
+        return !(a == b);
     }
 
-    T& operator[](size_t index){
-        if(index >= numAllocatedSpace){
-            throw std::out_of_range("Index out of bounds for index: " + std::to_string(index) + " >= " + std::to_string(numElements));
-        }
-        return dataPointer[index];
-    }
-
-    const T& operator[](size_t index) const{
-        if(index >= numElements){
-            throw std::out_of_range("Index out of bounds");
-        }
-        return dataPointer[index];
-    }
-
-    void clear() {
-        numElements = 0;
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, const Vector<T>& vector) {
+    template<typename U>
+    friend std::ostream& operator<<(std::ostream& os, const Vector<U>& vec) {
         os << "[";
-        for(size_t i = 0; i < vector.size(); i++) {
-            os << vector[i] << " ";
+        for (size_t i = 0; i < vec.size(); ++i) {
+            os << vec.data_[i];
+            if (i != vec.size() - 1) os << ", ";
         }
         os << "]";
         return os;
     }
-
-    // For non-const objects, return a writable pointer
-    T* begin() {
-        return dataPointer;
-    }
-
-    // For const objects, return a const pointer
-    const T* begin() const {
-        return dataPointer;
-    }
-
-    T* end() {
-        return dataPointer + numElements;
-    }
-
-    const T* end() const{
-        return dataPointer + numElements;
-    }
 };
+
 #endif
